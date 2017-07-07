@@ -160,7 +160,7 @@ clear: clean
 
 dist-src: dep
 	mkdir qcl-$(VERSION)
-	cp README CHANGES COPYING .depend $(SOURCE) qcl-$(VERSION) 
+	cp README CHANGES LICENSE.md .depend $(SOURCE) qcl-$(VERSION)
 	mkdir qcl-$(VERSION)/qc
 	cp qc/Makefile qc/*.h qc/*.cc qcl-$(VERSION)/qc
 	cp -r lib qcl-$(VERSION)
@@ -169,7 +169,7 @@ dist-src: dep
 
 dist-bin: build
 	mkdir qcl-$(VERSION)-$(ARCH)
-	cp Makefile README CHANGES COPYING qcl qcl-$(VERSION)-$(ARCH) 
+	cp Makefile README CHANGES LICENSE.md qcl qcl-$(VERSION)-$(ARCH)
 	cp -r lib qcl-$(VERSION)-$(ARCH)
 	tar czf qcl-$(VERSION)-$(ARCH).tgz --owner=0 --group=0 qcl-$(VERSION)-$(ARCH)
 	rm -r qcl-$(VERSION)-$(ARCH)
