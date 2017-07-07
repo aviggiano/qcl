@@ -1,6 +1,8 @@
 QCL (Quantum Computing Language)
 ================================
 
+QCL is one of the first implemented quantum programming languages
+
 Intro
 -----
 
