@@ -1,7 +1,15 @@
+QCL (Quantum Computing Language)
+================================
 
-QCL version 0.6.4 by Bernhard Oemer <oemer@tph.tuwien.ac.at>
-============================================================
+Intro
+-----
 
+This is a github port from the project's [official homepage](http://tph.tuwien.ac.at/~oemer/qcl.html).
+The idea is to ease the contribution of programmers interested in quantum computing, through guides, documentation,
+tests and the development of the core language itself.
+
+Original README by Bernhard Oemer <oemer@tph.tuwien.ac.at>
+----------------------------------------------------------
 
 Despite many common concepts with classical computer science, quantum
 computing is still widely considered as a special discipline within the
@@ -9,7 +17,7 @@ broad field of theoretical physics.  One reason for the slow adoption of
 QC by the computer science community is the confusing variety of
 formalisms (Dirac notation, matrices, gates, operators, etc.), none of
 which has any similarity with classical programming languages, as well
-as the rather ``physical'' terminology in most of the available
+as the rather "physical" terminology in most of the available
 literature.
 
 QCL (Quantum Computation Language) tries to fill this gap: QCL is a
