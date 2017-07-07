@@ -1,0 +1,91 @@
+set library 1;
+
+// returns the smallest factor > 1 of n or 1 if n is prime 
+
+int findfactor(int n) {
+  int i;
+  if n<=0 { exit "findfactor takes only positive args"; }
+  for i=2 to floor(sqrt(n)) {
+    if n mod i == 0 { return i; }
+  }
+  return 1;
+}
+
+// test if n is a prime number
+
+boolean testprime(int n) {
+  int i;
+  if n<=1 { return false; }
+  if n==2 or n==3 { return true; }
+  if n mod 2 == 0 { return false; }
+  for i=3 to floor(sqrt(n)) step 2 {
+    if n mod i == 0 { return false; }
+  }
+  return true;
+}
+
+// test if n is a prime power
+
+boolean testprimepower(int n) {
+  int i;
+  int f;
+  i=2;
+  while i<=floor(sqrt(n)) and f==0 {
+    if n mod i == 0 { f=i; }
+    i=i+1;
+  }
+  for i=2 to floor(log(n,f)) {
+    if f^i==n { return true; }
+  }
+  return false;
+}
+
+// returns x^a mod n
+
+int powmod(int x,int a,int n) {
+  int u=x;
+  int y=1;
+  int i;
+  
+  for i=0 to 30 {
+    if a/2^i mod 2 == 1 { y=y*u mod n; }
+    u=u^2 mod n;
+  }
+  return y;
+}
+
+// return the modular inverse to a mod n or 0 if gcd(a,n)>1
+
+int invmod(int a,int n) {
+  int b=a;
+  int i;
+
+  if gcd(a,n)>1 { return 0; }  
+  for i=1 to n {
+    if b*a mod n == 1 { return b; } 
+    b=b*a mod n;
+  }
+  return 0;
+}
+
+// finds the denominator q of the best rational approximation p/q
+// for x with q<qmax
+
+int denominator(real x,int qmax) {
+  real y=x;
+  real z;
+  int q0;
+  int q1=1;
+  int q2;
+  
+  while true {
+    z=y-floor(y);
+    if z<0.5/qmax^2 { return q1; }
+    y=1/z;
+    q2=floor(y)*q1+q0;
+    if q2>=qmax { return q1; }
+    q0=q1; q1=q2;
+  }
+}
+
+set library 0;

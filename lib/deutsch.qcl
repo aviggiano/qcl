@@ -1,0 +1,40 @@
+/* Define Oracle */
+
+const coin1=(random()>=0.5);       // Define two random boolean
+const coin2=(random()>=0.5);       //   constants
+
+boolean g(boolean x) {             // Oracle function g 
+  if coin1 {                       // coin1=true  -> g is constant
+    return coin2;
+  } else {                         // coin1=false -> g is balanced
+    return x xor coin2;
+  }
+}
+
+qufunct G(quconst x,quvoid y) {    // Construct oracle op. G from g
+  if g(false) xor g(true) { CNot(y,x); }
+  if g(false) { Not(y); }
+}
+
+/* Deutsch's Algorithm */
+
+operator U(qureg x,qureg y) {      // Bundle all unitary operations
+  H(x);                            //   of the algorithm into one
+  G(x,y);                          //   operator U
+  H(x & y);
+}
+
+procedure deutsch() {              // Classical control structure
+  qureg x[1];                      // allocate 2 qubits
+  qureg y[1];
+  int m;
+  {                                // evaluation loop
+    reset;                         //   initialize machine state
+    U(x,y);                        //   do unitary computation
+    measure y,m;                   //   measure 2nd register
+  } until m==1;                    // value in 1st register valid?
+  measure x,m;                     // measure 1st register which
+  print "g(0) xor g(1) =",m;       //   contains g(0) xor g(1)
+  reset;                           // clean up
+}
+

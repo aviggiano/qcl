@@ -1,0 +1,55 @@
+include "modarith.qcl";
+include "dft.qcl";
+
+procedure shor(int number) {
+  int width=ceil(log(number,2));   // size of number in bits
+  qureg reg1[2*width];             // first register
+  qureg reg2[width];               // second register
+  int qmax=2^width;
+  int factor;                      // found factor
+  int m; real c;                   // measured value
+  int x;                           // base of exponentiation
+  int p; int q;                    // rational approximation p/q
+  int a; int b;                    // possible factors of number
+  int e;                           // e=x^(q/2) mod number
+
+  if number mod 2 == 0 { exit "number must be odd"; }
+  if testprime(number) { exit "prime number"; }
+  if testprimepower(number) { exit "prime power"; };
+  {
+    {                              // generate random base
+      x=floor(random()*(number-3))+2;
+    } until gcd(x,number)==1;
+    print "chosen random x =",x;
+    H(reg1);                       // Hadamard transform
+    expn(x,number,reg1,reg2);      // modular exponentiation
+    measure reg2;                  // measure 2nd register
+    dft(reg1);                     // Fourier transform
+    measure reg1,m;                // measure 2st register
+    reset;                         // clear local registers
+    if m==0 {                      // failed if measured 0
+      print "measured zero in 1st register. trying again ...";
+    } else {
+      c=m*0.5^(2*width);           // fixed point form of m
+      q=denominator(c,qmax);       // find rational approximation
+      p=floor(q*c+0.5);
+      print "measured",m,", approximation for",c,"is",p,"/",q;
+      if q mod 2==1 and 2*q<qmax { // odd q ? try expanding p/q
+        print "odd denominator, expanding by 2";
+        p=2*p; q=2*q;
+      }
+      if q mod 2==1 {              // failed if odd q
+        print "odd period. trying again ...";
+      } else {
+        print "possible period is",q;
+        e=powmod(x,q/2,number);    // calculate candidates for
+        a=(e+1) mod number;        // possible common factors
+        b=(e+number-1) mod number; // with number
+        print x,"^",q/2,"+ 1 mod",number,"=",a,",",
+              x,"^",q/2,"- 1 mod",number,"=",b;
+        factor=max(gcd(number,a),gcd(number,b));
+      }
+    }
+  } until factor>1 and factor<number;   
+  print number,"=",factor,"*",number/factor;
+}  

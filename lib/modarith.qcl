@@ -1,0 +1,157 @@
+include "primes.qcl";
+
+set library 1;
+
+// Conditional Xor
+
+cond qufunct cxor(quconst a,qureg b) {
+  int i;
+  for i=0 to #a-1 {
+    CNot(b[i],a[i]);
+  }
+}
+
+// Conditional multiplexed binary adder for one of 2 classical 
+// bits and 1 qubit.
+// Full adder if #sum=2, half adder if #sum=1.
+
+cond qufunct muxaddbit(boolean a0,boolean a1,quconst sel,quconst b,qureg sum) {
+  qureg s=sel;                          // redeclare sel as qureg
+  quconst e=cond;			// explicit enable register
+
+  if (a0 xor a1) {                      // a0 and a1 differ?
+    if a0  { Not(s); }                  // write a into sect qubit
+    if #sum>1 {                         // set carry if available
+      CNot(sum[1],sum[0] & s & e);
+    }  
+    CNot(sum[0],s & e);                 // add a
+    if a0  { Not(s); }                  // restore sect qubit
+  } else {
+    if a0 and a1 { 
+      if #sum>1 {                       // set carry if available
+        CNot(sum[1],sum[0] & e);   
+      } 
+      CNot(sum[0],e);                   // add a
+    }
+  };
+                                        // Add qubit b  
+  if #sum>1 {                           // set carry if available
+    CNot(sum[1],b & sum[0]); 
+  }
+  CNot(sum[0],b);                       // add b
+}
+    
+// conditional multiplexed binary adder for one of 2 integers 
+// and 1 qureg. No output carry.
+
+cond qufunct muxadd(int a0,int a1,quconst sel,quconst b,quvoid sum) { 
+  int i;
+  for i=0 to #b-2 {                     // fulladd first #b-1 bits
+    muxaddbit(bit(a0,i),bit(a1,i),sel,b[i],sum[i:i+1]);
+  }
+                                        // half add last bit
+  muxaddbit(bit(a0,#b-1),bit(a1,#b-1),sel,b[#b-1],sum[#b-1]);
+}
+
+// Comparison operator. flag is toggled if b<a. 
+// b gets overwritten. Needs a #b-1 qubit junk register j 
+// as argument which is left dirty.
+
+qufunct lt(int a,qureg b,qureg flag,quvoid j) {
+  int i;
+  if bit(a,#b-1) {               // disable further comparison
+    CNot(j[#b-2],b[#b-1]);       // and set result flag if
+    Not(b[#b-1]);                // MSB(a)>MSB(b)
+    CNot(flag,b[#b-1]);
+  } else {
+    Not(b[#b-1]);                // disable further comparison
+    CNot(j[#b-2],b[#b-1]);       // if MSB(a)<MSB(b)
+  }
+  for i=#b-2 to 1 step -1 {      // continue for lower bits
+    if bit(a,i) {                // set new junk bit if undecided
+      CNot(j[i-1],j[i] & b[i]);
+      Not(b[i]);                 // honor last junk bit and
+      CNot(flag,j[i] & b[i]);    // set result flag if a[i]>b[i]
+    } else {
+      Not(b[i]);
+      CNot(j[i-1],j[i] & b[i]);
+    }
+  }
+  if bit(a,0) {
+    Not(b[0]);                   // if still undecided (j[0]=1)
+    CNot(flag,j[0] & b[0]);      // result is LSB(a)>LSB(b)
+  }
+}
+
+// conditional addition mod n for 1 integer and 1 qureg
+// flag is set if a+b<n for invertability
+
+cond qufunct addn(int a,int n,quconst b,quvoid flag,quvoid sum) {
+  qureg s=sum[0\#b-1];
+  qureg f=sum[#b-1];
+  qureg bb=b;                      // "abuse" sum and b as scratch
+  quconst e=cond;		   // explicit enable register
+  
+  lt(n-a,bb,f,s);                  // for the less-than operator
+  if f and e { Not(flag); }        // save result of comparison
+  !lt(n-a,bb,f,s);                 // restore sum and b
+  if e { 
+    muxadd(2^#b+a-n,a,flag,b,sum); // add either a or a-n
+  }
+}
+
+// Conditional overwriting addition mod n: sum -> (a+sum) mod n
+
+cond qufunct oaddn(int a,int n,qureg sum) {
+  qureg j[#sum];
+  qureg f[1];
+  quconst e=cond;		   // explicit enable register
+  
+  if e { addn(a,n,sum,f,j); }      // junk -> a+b mod n
+  Swap(sum,j);                     // swap junk and sum
+  CNot(f,e);                       // toggle flag
+  if e { !addn(n-a,n,sum,f,j); }   // uncompute b to zero
+}
+
+// Conditional Multiplication mod n of an integer a by the qureg b,
+// prod <- ab mod n.
+
+cond qufunct muln(int a,int n,quconst b,qureg prod) {
+  int i;
+  
+  for i=0 to #prod-1 {
+    if bit(a,i) and b[0] { Not(prod[i]); }
+  }
+  for i=1 to #b-1 {
+    if b[i] { oaddn(2^i*a mod n,n,prod); }
+  }
+}
+
+// Conditional Overwriting multiplication mod n: b-> ab mod n
+
+cond qufunct omuln(int a,int n,qureg b) {
+  qureg j[#b];
+
+  if gcd(a,n)>1 { 
+    exit "omuln: a and n have to be relativly prime"; 
+  }
+  muln(a,n,b,j);
+  !muln(invmod(a,n),n,j,b);
+  cxor(j,b);
+  cxor(b,j);
+}
+
+// Modular exponentiation: b -> x^a mod n
+
+cond qufunct expn(int a,int n,quconst b,quvoid ex) {
+  int i;
+  
+  Not(ex[0]);                            // start with 1
+  for i=0 to #b-1 {
+    if b[i] {
+      omuln(powmod(a,2^i,n),n,ex);       // ex -> ex*a^2^i mod n
+    }
+  }
+}
+
+set library 0;

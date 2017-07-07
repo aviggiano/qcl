@@ -1,0 +1,53 @@
+qufunct query(qureg x,quvoid f,int n) {
+  int i;
+  for i=0 to #x-1 {     // x -> NOT (x XOR n)
+    if not bit(n,i) { Not(x[i]); }
+  }
+  CNot(f,x);            // flip f if x=1111..
+  for i=0 to #x-1 {     // x <- NOT (x XOR n)
+    if not bit(n,i) { !Not(x[i]); }
+  }
+}
+
+operator diffuse(qureg q) {
+  H(q);                 // Hadamard Transform
+  Not(q);               // Invert q
+  CPhase(pi,q);         // Rotate if q=1111..
+  !Not(q);              // undo inversion
+  !H(q);                // undo Hadamard Transform
+}
+
+operator search(qureg q,int n) {
+  int i;
+  qureg f[1];
+  for i=1 to ceil(sqrt(2^#q)) {
+    query(q,f,n);
+    CPhase(pi,f);
+    !query(q,f,n);
+    diffuse(q);
+  }
+}
+
+procedure grover(int n) {
+  int l=floor(log(n,2))+1;        // no. of qubits
+  int m=ceil(pi/8*sqrt(2^l));     // no. of iterations
+  int x;
+  int i;
+  qureg q[l];
+  qureg f[1];
+  print l,"qubits, using",m,"iterations";
+  {
+    reset;
+    H(q);               // prepare superposition
+    for i= 1 to m {     // main loop
+      query(q,f,n);     // calculate C(q)
+      CPhase(pi,f);     // negate |n>
+      !query(q,f,n);    // undo C(q)
+      diffuse(q);       // diffusion operator
+    }
+    measure q,x;        // measurement
+    print "measured",x;
+  } until x==n;
+  reset;                // clean up local registers
+}
+

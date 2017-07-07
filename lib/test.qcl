@@ -1,0 +1,180 @@
+include "shor";
+include "grover";
+
+procedure testexpn() {
+  qureg q[6];
+  qureg p[8];
+  int m;
+  print "testing modular exponentiation (7^x mod 31)";
+  reset;
+  set seed 0;
+  H(q);
+  expn(7,31,q,p);
+  measure q,m;
+  if m!=32 {  
+    print "measured",m,"expected 32";
+  }
+  reset;
+}
+
+procedure testdft() {
+  qureg q[6];
+  print "testing discrete Fourier transform";
+  reset;
+  dft(q);
+  CPhase(pi/2,q[1]);
+  !dft(q);
+  print "expecting (1+i)/2 |000000> - i/2 |010000> + 1/2 |110000>";
+  dump;
+  reset;
+}
+
+procedure testcond() {
+  qureg a[1];
+  qureg b[1];
+  qureg c[1];
+  qureg d[1];
+  qureg e[1];
+  qureg q[1];
+
+  print "testing quantum conditions";
+  reset;
+  set log 1;
+  print a;
+  if a { Not(q); };
+  print a and c;
+  if a and c { Not(q); };
+  print (a or b) and c;
+  if (a or b) and c { Not(q); };
+  print (a and b) xor (c and d);
+  if (a and b) xor (c and d) { Not(q); };
+  print (a or b) and c;
+  if (a or b) and c { Phase(pi/3); } else { Phase(-pi/3); }
+  print a or b, c or d,d or e;
+  if a or b { 
+    if c or d { 
+      Phase(pi/2); 
+    } else { 
+      Phase(pi/3);
+    }
+  } else {
+    if d or e {
+      Phase(pi/4);
+    } else {
+      Phase(pi/5);
+    }
+  }
+  set log 0;
+  reset;
+}
+
+operator tf1(qureg q) {
+  int i;
+  for i=0 to #q-1 {
+    if q[i] { break; }
+    Phase(pi/2^i);
+  }
+}
+
+cond operator tf2(qureg q,qureg p) {
+  int i;
+  int n=0;
+  for i=0 to #q-1 {
+    if q[i] { n=i; }
+  }
+  Not(p[n]);
+}
+
+procedure testfork() {
+  qureg q[3];
+  qureg p[3];
+
+  print "testing forking quantum if-statements";
+  reset;
+  H(q);
+  set log 1;
+  list tf1;
+  tf1(q);
+  set log 0;
+  dump;
+  reset;
+  H(q);
+  set log 1;
+  list tf2;
+  tf2(q,p);
+  set log 0;
+  dump;
+  reset;
+}  
+
+procedure testbitops() {
+  qureg q[1];
+  print "Operator H:";
+  reset;
+  H(q); !H(q); dump;
+  H(q);
+  dump;
+  reset; Not(q);
+  H(q);
+  dump;
+
+  print "Operator X:";
+  reset;
+  X(q); !X(q); dump;
+  X(q);
+  dump;
+  reset; Not(q);
+  X(q);
+  dump;
+
+  print "Operator Y:";
+  reset;
+  Y(q); !Y(q); dump;
+  Y(q);
+  dump;
+  reset; Not(q);
+  Y(q);
+  dump;
+
+  print "Operator Z:";
+  reset;
+  Z(q); !Z(q); dump;
+  Z(q);
+  dump;
+  reset; Not(q);
+  Z(q);
+  dump;
+
+  print "Operator S:";
+  reset;
+  S(q); !S(q); dump;
+  S(q);
+  dump;
+  reset; Not(q);
+  S(q);
+  dump;
+
+  print "Operator T:";
+  reset;
+  T(q); !T(q); dump;
+  T(q);
+  dump;
+  reset; Not(q);
+  T(q);
+  dump;
+
+  reset;
+}
+
+set seed 0;
+set check 1;
+set echo 1;
+
+shor(15);
+grover(123);
+testexpn();
+testdft();
+//testcond();
+//testfork();
+//testbitops();
+

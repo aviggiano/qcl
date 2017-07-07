@@ -1,0 +1,185 @@
+cond qufunct inc(qureg x) { // increment register
+  int i;
+  for i = #x-1 to 0 step -1 {
+    CNot(x[i],x[0::i]);     // apply controlled-not from
+  }                         // MSB to LSB
+}
+qufunct cinc(qureg x,quconst e) {     // increment register
+  int i;
+  for i = #x-1 to 0 step -1 {
+    CNot(x[i],x[0::i] & e);     // apply controlled-not from
+  }                         // MSB to LSB
+}
+qufunct parity(quconst x,quvoid y) {
+  int i;
+  for i = 0 to #x-1 {
+    CNot(y,x[i]);           // flip parity for each set bit
+  }
+}
+qufunct parity2(quconst x1,quconst x2,quvoid y) {
+  quscratch j[2];       // allocate 2 scratch qubits
+  parity(x1,j[0]);      // store parity of x1 in j[0]
+  parity(x2,j[1]);      // store parity of x2 in j[1]
+  CNot(y,j);            // set y if x1 and x2 have odd 
+}                       // parity
+operator expphase(qureg q) {
+  if q[1] {
+    if q[0] {
+      Phase(pi/4);
+    } else {
+      Phase(pi/2);
+    }
+  } else {
+    if q[0] { Phase(pi); }
+  }
+}
+cond qufunct demux(quconst s,qureg o) {
+  int i;
+  int n = 0;
+  for i=0 to #s-1 {             // accumulate content of
+    if s[i] { n=n+2^i; }        //   selection register
+  }
+  Not(o[n]);                    // flip selected output qubit
+}
+procedure resetregister(qureg q) {
+  int i;
+  int m;
+  for i=0 to #q-1 {
+    measure q[i],m;
+    if m==1 { Not(q[i]); }
+  }
+}
+qufunct operator mynot(qureg q) {
+  SqrtNot(q);
+  SqrtNot(q);
+}
+qufunct xreg(qureg a,int b) {     // xor reg. a with binary number b
+  int i;
+  for i=0 to #a-1 {              // iterate over qubits of a
+    if bit(b,i) { Not(a[i]); }   // invert i-th qubit of a if
+  }                              //   i-th bit of b is set
+}
+qufunct addto(qureg a,int b) {   // add binary number b to reg. a
+  int i;
+  for i=0 to #a-1 {              // iterate over qubits of a
+    if bit(b,i) {                // if i-th bit of b is set
+      
+      Not(a[i]); }   // invert i-th qubit of a if
+  }                              //   i-th bit of b is set
+}
+qufunct rot(qureg q,int d) {
+  int i; int j; int k;
+  for i=0 to d*#q-d-1 {        // iterate over qubits of q
+    j=(i+d) mod #q;
+    k=i mod #q;
+    Swap(q[j],q[k]);
+  }
+}
+operator ptrans(qureg q,real phi) {     // Phase transformation
+  V(phi,q[0]);                          // rotate LSB    
+  if #q>1 {                             // if there are higher qubits
+    ptrans(q[1..#q-1],2*phi);           // call ptrans with double
+  }                                     //   phase
+}
+operator cphase(real phi,quconst q) {   // Conditional phase gate
+  qureg s[1];                           // single scratch qubit
+  CNot(s,q);
+  RotZ(phi,s);
+  CNot(s,q);
+}
+operator prepare(quvoid q) {
+  H(q);
+  ptrans(q,2*pi/2^#q);
+}
+qufunct bitcount(quconst q,quvoid p) {  // count set bits in q
+  int i; int j;
+  if #q>=2^#p {                         // make sure that p is wide
+    exit "target register too small";   // enough
+  }
+  for i=0 to #q-1 {                     // iterate over qubits in q
+    for j=#p-1 to 0 step -1 {           //   increment p if q[i] 
+      CNot(p[j],p[0::j] & q[i]);        //   is set
+    }
+  }
+}
+int bc(int n) {
+  int k=n;
+  int b;
+  while k>0 {
+    b=b+(k mod 2);
+    k=k/2;
+  }
+  return b;
+}
+qucond bcmp(quconst a,quconst b) {
+  qucond c=false;
+  int i;
+  int j;
+  for i=0 to 2^#a {
+    for j=0 to 2^#b {
+      if bc(i)==bc(j) {
+        c=c or a==i and b==j;
+      }
+    }
+  }
+  return c;
+}
+
+qufunct bitcmp0(quconst a,quconst b,quvoid t,quvoid s) {
+  bitcount(a,s);
+  !bitcount(b,s);
+  Not(s);
+  CNot(t,s);
+}
+
+
+qufunct bitcmp(quconst a,quconst b,quvoid t) {
+  quscratch s[ceil(log(max(#a,#b)+0.5,2))];
+  bitcmp0(a,b,t,s);
+}
+/*
+qufunct CNotRec(qureg q,quconst c) {
+  quscratch
+cond qufunct Not(qureg q) {
+  quvoid p=cond;
+  qureg s[2];
+  int i;
+  if #p<3 {
+    if #p==0 {
+      NOT(q);
+    } else {
+      CNOT(q,p);
+    }
+  } else {
+    if q[
+    CNotRec(q,p);
+ 
+  if #q>1 {
+    for i=0 to #q {
+      Not(q[i],p);
+    }
+  }
+*/
+
+operator pdlog(real phi,qureg q) {
+  int i;
+  for i=#q-1 to 0 step -1 {     // iterate from MSB to LSB
+    if q[i] { break; }          //   exit if qubit is set
+    Phase(-phi);                //   rotate by -phi
+  }
+}
+qufunct F(quconst x,qureg y) {
+//  CNot(y,x);
+}
+procedure deutsch() {
+  qureg x[1]; qureg y[1];
+  int m;
+  Not(y);
+  H(x & y);
+  F(x,y);
+  H(x);
+  measure x,m;
+  print "f(0) xor f(1) =",m;
+  reset;
+}
+

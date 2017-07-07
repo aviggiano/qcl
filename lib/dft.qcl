@@ -1,0 +1,28 @@
+set library 1;
+
+// pseudo classic operator to swap bit order
+
+cond qufunct flip(qureg q) { 
+  int i;                // declare loop counter
+  for i=0 to #q/2-1 {   // swap 2 symmetric bits
+    Swap(q[i],q[#q-i-1]);
+  }
+}  
+
+// discrete Fourier transform (Coppersmith)
+
+operator dft(qureg q) { // main operator
+  const n=#q;           // set n to length of input
+  int i; int j;         // declare loop counters
+  for i=1 to n {
+    for j=1 to i-1 {    // apply conditional phase gates
+      V(pi/2^(i-j),q[n-i] & q[n-j]);
+//      if q[n-i] and q[n-j] { Phase(pi/2^(i-j)); }
+    }
+    H(q[n-i]);          // qubit rotation
+  }    
+  flip(q);              // swap bit order of the output
+}
+
+set library 0;
+

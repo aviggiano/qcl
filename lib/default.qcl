@@ -1,0 +1,224 @@
+
+/* generic matrix operator: |i> -> sum_j u[i,j] |j> */
+
+extern operator Matrix(complex matrix u,qureg q);
+
+/* obsolete matrix operators */
+
+extern operator Matrix2x2(
+  complex u00,complex u01,
+  complex u10,complex u11,
+qureg q);
+
+extern operator Matrix4x4(
+  complex u00,complex u01,complex u02,complex u03,
+  complex u10,complex u11,complex u12,complex u13,
+  complex u20,complex u21,complex u22,complex u23,
+  complex u30,complex u31,complex u32,complex u33,
+qureg q);
+
+extern operator Matrix8x8(
+  complex u00,complex u01,complex u02,complex u03,
+  complex u04,complex u05,complex u06,complex u07,
+  complex u10,complex u11,complex u12,complex u13,
+  complex u14,complex u15,complex u16,complex u17,
+  complex u20,complex u21,complex u22,complex u23,
+  complex u24,complex u25,complex u26,complex u27,
+  complex u30,complex u31,complex u32,complex u33,
+  complex u34,complex u35,complex u36,complex u37,
+  complex u40,complex u41,complex u42,complex u43,
+  complex u44,complex u45,complex u46,complex u47,
+  complex u50,complex u51,complex u52,complex u53,
+  complex u54,complex u55,complex u56,complex u57,
+  complex u60,complex u61,complex u62,complex u63,
+  complex u64,complex u65,complex u66,complex u67,
+  complex u70,complex u71,complex u72,complex u73,
+  complex u74,complex u75,complex u76,complex u77,
+qureg q);
+
+/* generic permutation operator: |i> -> |p[i]> */
+
+extern qufunct Perm(int vector p,qureg q);
+
+/* obsolete permutation operators */
+
+extern qufunct Perm2(int p0 ,int p1 ,qureg q);
+
+extern qufunct Perm4(int p0 ,int p1 ,int p2 ,int p3 ,qureg q);
+
+extern qufunct Perm8(
+  int p0 ,int p1 ,int p2 ,int p3 ,int p4 ,int p5 ,int p6 ,int p7 ,
+qureg q);
+
+extern qufunct Perm16(
+  int p0 ,int p1 ,int p2 ,int p3 ,int p4 ,int p5 ,int p6 ,int p7 ,
+  int p8 ,int p9 ,int p10,int p11,int p12,int p13,int p14,int p15,
+qureg q);
+
+extern qufunct Perm32(
+  int p0 ,int p1 ,int p2 ,int p3 ,int p4 ,int p5 ,int p6 ,int p7 ,
+  int p8 ,int p9 ,int p10,int p11,int p12,int p13,int p14,int p15,
+  int p16,int p17,int p18,int p19,int p20,int p21,int p22,int p23,
+  int p24,int p25,int p26,int p27,int p28,int p29,int p30,int p31,
+qureg q);
+
+extern qufunct Perm64(
+  int p0 ,int p1 ,int p2 ,int p3 ,int p4 ,int p5 ,int p6 ,int p7 ,
+  int p8 ,int p9 ,int p10,int p11,int p12,int p13,int p14,int p15,
+  int p16,int p17,int p18,int p19,int p20,int p21,int p22,int p23,
+  int p24,int p25,int p26,int p27,int p28,int p29,int p30,int p31,
+  int p32,int p33,int p34,int p35,int p36,int p37,int p38,int p39,
+  int p40,int p41,int p42,int p43,int p44,int p45,int p46,int p47,
+  int p48,int p49,int p50,int p51,int p52,int p53,int p54,int p55,
+  int p56,int p57,int p58,int p59,int p60,int p61,int p62,int p63,
+qureg q);
+
+/* standard unconditional single-qubit gates */
+
+extern operator H(qureg q);
+extern qufunct  NOT(qureg q);
+extern qufunct  X(qureg q);
+extern operator Y(qureg q);
+extern operator Z(quconst q);
+extern operator S(quconst q);
+extern operator T(quconst q);
+
+operator Pauli(int i,qureg q) {   // Pauli Matrices
+  if i==1 { X(q); }
+  if i==2 { Y(q); }
+  if i==3 { Z(q); }
+  if i<0 or i>3 { exit "Unknown Pauli Gate"; }
+}
+
+/* The Mix-operator can be any operator which transforms */ 
+/* the state |0> into an even superposition of all base- */
+/* vector with phase 0, i.e. |0> -> 1/sqrt(N) sum |i>    */
+
+operator Mix(qureg q) {           // Generic Mix-Operator
+  H(q);                           // using the Hadamard 
+}                                 // transform
+
+/* unconditional controlled-not gate */
+
+extern qufunct CNOT(qureg q,quconst c);
+
+/* The conditional versions of Not and CNot can either  */
+/* use the built-in conditional Not-gate or the generic */
+/* unconditional NOT and CNOT gates                     */   
+
+// extern cond qufunct Not(qureg q);        // conditional Not
+cond qufunct Not(qureg q) {                 // generic NOT/CNOT
+  quconst e = cond;
+  if #e>0 { CNOT(q,e); } else { NOT(q); }
+}
+
+cond qufunct CNot(qureg q,quconst c) {
+  quconst e = cond;
+  // if c and e { Not(q); };                // conditional Not
+  CNOT(q,c & e);                            // generic CNOT
+};
+
+/* unconditional V-gate (controlled phase rotation)     */
+
+extern operator V(real phi,quconst q);
+
+/* The conditional versions of Phase and CPhase can     */
+/* either use the built-in conditional Phase-gate or    */
+/* or the unconditional V-gate                          */
+
+// extern cond operator Phase(real phi);    // conditional Phase
+cond operator Phase(real phi) {             // V-gate
+  quconst c = cond;
+  if #c>0 { V(phi,c); }
+}
+
+cond operator CPhase(real phi,quconst q) {
+  quconst e = cond;
+  // if q and e { Phase(phi); }             // conditional Phase
+  V(phi,q & e);                             // V-gate
+}
+
+/* obsolete single qubit rotation (period 4*pi) */
+
+extern operator Rot(real theta,qureg q);
+
+/* Square root of Not */
+
+extern operator SqrtNot(qureg q);
+
+/* Single qubit rotation about X-axis */
+
+extern operator RotX(real theta,qureg q);
+
+/* Single qubit rotation about Y-axis */
+
+extern operator RotY(real theta,qureg q);
+
+/* Single qubit rotation about Z-axis */
+
+extern operator RotZ(real theta,qureg q);
+
+extern qufunct ModExp(int n,int x,quconst a,quvoid b);
+
+/* The Fanout operator is used internally for scratch  */
+/* space management. If you provide your own version,  */
+/* make sure it doesn't use local quscratch registers. */
+
+/* generic Fanout operator                             */
+
+extern cond qufunct Fanout(quconst a,quvoid b);
+
+/* alternative implementation; comment out if you want */
+/* an explicit decomposition using CNot gates          */
+/*
+cond qufunct Fanout(quconst a,quvoid b) {
+  int i;
+  if #a!=#b { exit "fanout arguments must be of equal size"; }
+  for i=0 to #a-1 { CNot(b[i],a[i]); }
+}
+*/
+
+
+/* generic Swap operator                               */
+
+extern cond qufunct Swap(qureg a,qureg b);
+
+/* alternative implementation; comment out if you want */
+/* an explicit decomposition using CNot gates          */
+/*
+cond qufunct Swap(qureg a,qureg b) {
+  int i;
+  if #a!=#b { exit "swap arguments must be of equal size"; }
+  for i=0 to #a-1 {
+    CNot(b[i],a[i]);
+    CNot(a[i],b[i]);
+    CNot(b[i],a[i]);
+  }
+}
+*/
+
+/* Mathematical constants */
+
+const pi = 3.141592653589793238462643383279502884197;
+const E  = 2.718281828459045235360287471352662497757;
+const I  = (0,1);
+
+/* Auxillary functions */
+
+qufunct set(int n,qureg q) {
+  int i;
+  for i=0 to #q-1 {
+    if bit(n,i) { Not(q[i]); }
+  }
+}
+
+/* Randomize register (apply random single qubit rotations) */
+
+procedure randomize(qureg q) {
+  int i;
+  for i=0 to #q-1 {
+    RotZ(4*pi*random(),q[i]);
+    RotY(4*pi*random(),q[i]);
+    RotZ(4*pi*random(),q[i]);
+  }
+}
