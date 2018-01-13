@@ -23,7 +23,7 @@ as the rather "physical" terminology in most of the available
 literature.
 
 QCL (Quantum Computation Language) tries to fill this gap: QCL is a
-hight level, architecture independent programming language for quantum
+high level, architecture independent programming language for quantum
 computers, with a syntax derived from classical procedural languages
 like C or Pascal.  This allows for the complete implementation and
 simulation of quantum algorithms (including classical components) in one
